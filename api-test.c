@@ -33,7 +33,7 @@ void pageit(Pentry q[MAXPROCESSES]) {
     int testPage = 0;
     int pageinret = -1;
     int pageoutret = -1;
-    
+    int dummy;
     /* All pages are swapped out on start */
     if(q[testProc].pages[testPage]){
 	/* Page is swapped in */
@@ -42,7 +42,7 @@ void pageit(Pentry q[MAXPROCESSES]) {
 	    fprintf(stdout, "%4d - q[%d].pages[%d] = %ld\n",
 		    tick, testProc, testPage, q[testProc].pages[testPage]);
 	    
-	    pageinret = pagein(testProc, testPage);
+	    pageinret = pagein(testProc, testPage, &dummy);
 	    fprintf(stdout, "%4d - pagein(%d, %d) returns %d\n",
 		    tick, testProc, testPage, pageinret);	    
 
@@ -77,7 +77,7 @@ void pageit(Pentry q[MAXPROCESSES]) {
 	    fprintf(stdout, "%4d - q[%d].pages[%d] = %ld\n",
 		    tick, testProc, testPage, q[testProc].pages[testPage]);
 	    
-	    pageinret = pagein(testProc, testPage);
+	    pageinret = pagein(testProc, testPage, &dummy);
 	    fprintf(stdout, "%4d - pagein(%d, %d) returns %d\n",
 		    tick, testProc, testPage, pageinret);
 	    if(pageinret){

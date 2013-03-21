@@ -23,6 +23,12 @@
 #define PHYSICALPAGES 100	/* number of available physical pages */ 
 #define MAXPC (MAXPROCPAGES*PAGESIZE) /* largest PC value */ 
 
+enum swapin_state {
+	SWAPOUT = 1,
+	SWAPIN,
+	SWAPFAIL
+};
+
 struct pentry {
     long active; 
     long pc; 
@@ -41,7 +47,7 @@ typedef struct pentry Pentry;
  *   1 if pagein started, already running, or paged in
  *   0 if it can't start (e.g., swapping out) 
  */
-extern int pagein (int process, int page); 
+extern int pagein (int process, int page, int *state); 
 
 /* int pageout(int process, int page)
  *   This pages out the requested page.

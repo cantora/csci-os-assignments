@@ -12,40 +12,73 @@
  * 	This file contains an lru pageit
  *      implmentation.
  */
+#include <errno.h>
+#include "lru.h"
 
-#include <stdio.h> 
-#include <stdlib.h>
+static uint32_t tick = 0; // artificial time
+	
+static void lru_pageit(Pentry q[MAXPROCESSES], uint32_t tick) {
+	int proc, page, state, evicted;
+	
+	for(proc = 0; proc < MAXPROCESSES; proc++) {
+		if(!q[proc].active) /* done if its not active */
+			continue;
 
-#include "simulator.h"
+		page = q[proc].pc/PAGESIZE;
+		/* note this time for future eviction decisions */
+		timestamps[proc][page] = tick; 
+		
+		/* done if the page is already in memory */
+		if(q[proc].pages[page]) 
+			continue;
+
+		/* the page is not in memory.
+		 * if pagein give 1 the page is either 
+		 * on its way already or we just got it
+		 * started, so we are done with this process
+		 */
+		if(pagein(proc, page, &state) )
+			continue;
+
+		/* either the page is swapping out or 
+		 * there are no free physical pages
+		 */
+		if(state == SWAPOUT) 
+			continue; /* just have to wait... */
+
+		/* there are no free physical pages */
+		if(pages_alloc(q, proc) < 1) 
+			continue; /* must have at least one page to evict */
+
+		lru_page(q, proc, tick, &evicted);
+
+		if(!pageout(proc, evicted) ) {
+			endit();
+		}
+	}
+}
+
+void exit_fn() {
+	printf("final tick value was %d\n", tick);	
+}
 
 void pageit(Pentry q[MAXPROCESSES]) { 
-    
-    /* This file contains the stub for an LRU pager */
-    /* You may need to add/remove/modify any part of this file */
-
-    /* Static vars */
-    static int initialized = 0;
-    static int tick = 1; // artificial time
-    static int timestamps[MAXPROCESSES][MAXPROCPAGES];
-
-    /* Local vars */
-    int proctmp;
-    int pagetmp;
-
-    /* initialize static vars on first run */
-    if(!initialized){
-	for(proctmp=0; proctmp < MAXPROCESSES; proctmp++){
-	    for(pagetmp=0; pagetmp < MAXPROCPAGES; pagetmp++){
-		timestamps[proctmp][pagetmp] = 0; 
-	    }
-	}
-	initialized = 1;
-    }
-    
-    /* TODO: Implement LRU Paging */
-    fprintf(stderr, "pager-lru not yet implemented. Exiting...\n");
-    exit(EXIT_FAILURE);
-
-    /* advance time for next pageit iteration */
-    tick++;
+	/* tick starts at 1, so 0 means this is the first run
+	 * or an overflow. either way, reset timestamps.
+	 */	
+	if(tick < 1) {
+		timestamps_init();		
+		tick = 1;
+		if(atexit(exit_fn) != 0) {
+			perror(NULL);
+			exit(1);
+		}
+	}	
+	
+	lru_pageit(q, tick);
+	
+	/* advance time for next pageit iteration */
+	tick++;
 } 
+
+

@@ -14,7 +14,7 @@ test-basic: simulator.o pager-basic.o
 test-lru: simulator.o pager-lru.o
 	$(CC) $(LFLAGS) $^ -o $@
 
-test-predict: simulator.o pager-predict.o
+test-predict: simulator.o pager-predict.o phist.o
 	$(CC) $(LFLAGS) $^ -o $@
 
 test-api: simulator.o api-test.o

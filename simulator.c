@@ -415,22 +415,30 @@ sim_log(LOG_PAGE,"process=%2d page=%3d start pageout\n",process,page);
 } 
 
 /* public routine: swap one page in */ 
-int pagein(int process, int page) { 
+int pagein(int process, int page, int *state) { 
     if (process<0 || process>=procs 
      || !processes[process]
      || !processes[process]->active
      || page<0 || page>=processes[process]->npages)
 	return FALSE; 
-    if (processes[process]->pages[page]>=0) 
+    if (processes[process]->pages[page]>=0) {
+	*state = SWAPIN;
 	return TRUE; /* on its way */ 
-    if (pagesavail==0) 
+	}
+    if (pagesavail==0) {
+	*state = SWAPFAIL;
 	return FALSE; 
-    if (processes[process]->pages[page]>=-PAGEWAIT ) 
+	}
+    if (processes[process]->pages[page]>=-PAGEWAIT ) {
+	*state = SWAPOUT;
 	return FALSE; /* not yet out */ 
+	}
     sim_log(LOG_PAGE,"process=%2d page=%3d start pagein\n",process,page);
     if (pages) fprintf(pages,"%ld,%d,%d,%ld,%ld,coming\n",
 	sysclock,process,page,processes[process]->pid, processes[process]->kind); 
-    processes[process]->pages[page]=PAGEWAIT; pagesavail--; return TRUE; 
+    processes[process]->pages[page]=PAGEWAIT; pagesavail--; 
+	*state = SWAPIN;
+	return TRUE; 
 } 
 
 /*============
@@ -578,7 +586,8 @@ static void allprint() {
     fprintf(stderr,"----------------------------------------------------------------------------\n"); 
 } 
 
-static void endit() { allprint(); exit(0); } 
+//static void endit() { allprint(); exit(0); } 
+void endit() { allprint(); exit(0); } 
   
 static void allinit () { 
     long i; 
